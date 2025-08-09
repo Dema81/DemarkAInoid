@@ -1,2 +1,2 @@
 # DemarkAInoid
-Play &amp; get your discount🧠✨🚀
+Relax, play &amp; get your discount🧠✨🚀
