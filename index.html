@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>DemarkAInoid — DemarkAInoid</title>
+<style>
+  :root{
+    --bg:#f7f6ff; --panel:#fff; --accent1:#ff4d8a; --accent2:#ffd24d; --accent3:#6ee7b7; --accent4:#0b69ff;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  html,body{height:100%;margin:0;background: radial-gradient(circle at 10% 10%, #fff6fb 0%, var(--bg) 45%); overflow:hidden;}
+  .root{height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
+  .wrap{width:100%;max-width:1200px;display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  @media(max-width:980px){ .wrap{grid-template-columns:1fr;max-width:980px} }
+  .game-card{background:linear-gradient(180deg,var(--panel),#f3f7ff);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(40,30,80,0.09);position:relative;overflow:hidden}
+  .header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .logo{display:flex;align-items:center;gap:10px}
+  .title{font-weight:800;color:#2e2140}
+  .subtitle{font-size:13px;color:#6b5f78}
+  .hud{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;color:#2e3150}
+  .hud .left{display:flex;gap:12px;align-items:center}
+  .hud .right{display:flex;gap:8px;align-items:center}
+  .badge{background:#f0f5ff;padding:6px 10px;border-radius:10px;box-shadow:0 6px 14px rgba(15,40,120,0.06)}
+  .canvas-wrap{background:linear-gradient(180deg,#fff,#eef6ff);border-radius:12px;padding:8px;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;border-radius:8px;background:linear-gradient(180deg,#eaf3ff,#dbe8ff);}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,20,40,0.55);z-index:40}
+  .card{background:linear-gradient(180deg,#ffffffee,#fbfbff);padding:18px;border-radius:12px;max-width:520px;text-align:center;box-shadow:0 10px 30px rgba(20,20,50,0.12)}
+  .card h2{margin:6px 0 8px}
+  .big-btn{padding:10px 18px;border-radius:999px;border:none;cursor:pointer;font-weight:800}
+  .play-btn{background:linear-gradient(90deg,var(--accent1),#ff879f);color:white}
+  .action-btn{background:linear-gradient(90deg,var(--accent4),#5aa6ff);color:white}
+  .coupon{background:linear-gradient(90deg,#fff7e0,#fff0ff);padding:10px;border-radius:10px;margin-top:12px}
+  .info-card{background:linear-gradient(180deg,#fff,#fcfcff);border-radius:12px;padding:14px;box-shadow:0 8px 20px rgba(30,30,70,0.06);height:calc(100% - 28px);display:flex;flex-direction:column;justify-content:space-between}
+  .info-card h3{margin:0 0 10px}
+  .small{font-size:13px;color:#6b5f78}
+  footer{grid-column:1/-1;margin-top:8px;text-align:center;color:#7a6f84;font-size:13px}
+  #downloadCount{font-weight:800;color:#0b69ff}
+</style>
+</head>
+<body>
+
+<audio id="backgroundMusic" src="nutcracker.mp3" loop></audio>
+
+<div class="root">
+  <div class="wrap" id="wrapRoot">
+
+    <!-- LEFT: GAME -->
+    <div class="game-card" id="gameCard">
+
+      <div class="header">
+        <div class="logo" aria-hidden="true">
+          <svg width="88" height="36" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#ff7ab6"/><stop offset="1" stop-color="#ffd24d"/></linearGradient></defs><rect rx="10" width="220" height="60" fill="#fff" opacity="0"/><g transform="translate(8,6)"><rect x="0" y="0" width="48" height="48" rx="10" fill="url(#g1)"/><text x="24" y="32" font-family="Arial" font-weight="800" font-size="20" fill="#fff" text-anchor="middle">D</text></g><text x="70" y="36" font-family="Inter,Arial" font-weight="800" font-size="15" fill="#40284d">DemarkAInoid</text></svg>
+        </div>
+        <div>
+          <div class="title" id="titleText">DemarkAInoid</div>
+          <div class="subtitle" id="subtitleText"></div>
+        </div>
+      </div>
+
+      <div class="hud" aria-live="polite">
+        <div class="left">
+          <div class="badge" id="scoreDisplay"></div>
+          <div class="badge" id="livesDisplay"></div>
+          <div class="badge" id="levelDisplay"></div>
+        </div>
+        <div class="right">
+          <div class="small" id="langLabel"></div>
+          <select id="lang" aria-label="Language" style="padding:6px;border-radius:8px">
+            <option value="en" selected>EN</option>
+            <option value="it">IT</option>
+            <option value="de">DE</option>
+            <option value="fr">FR</option>
+            <option value="nl">NL</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+        <button id="pauseBtn" class="action-btn big-btn" aria-pressed="false"></button>
+        <div class="small" id="downloadLabel"></div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap" style="height:calc(100vh - 240px);">
+        <canvas id="canvas" width="960" height="600" role="img" aria-label="Game Area"></canvas>
+      </div>
+
+      <!-- overlays -->
+      <div class="overlay" id="startOverlay">
+        <div class="card" role="dialog" aria-modal="true">
+          <h2 id="startTitle"></h2>
+          <p id="startDesc"></p>
+          <div style="display:flex;gap:12px;justify-content:center;margin-top:8px">
+            <button id="startBtn" class="play-btn big-btn"></button>
+            <button id="howBtn" class="action-btn big-btn"></button>
+          </div>
+          <p class="small" style="margin-top:10px" id="audioNote"></p>
+        </div>
+      </div>
+
+      <div class="overlay" id="levelOverlay" style="display:none;pointer-events:auto">
+        <div class="card" id="levelCard">
+          <h2 id="levelMsg"></h2>
+          <p id="levelSub"></p>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+            <button id="nextBtn" class="play-btn big-btn"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="endOverlay" style="display:none;pointer-events:auto">
+        <div class="card" id="endCard">
+          <h2 id="endTitle"></h2>
+          <p id="endMsg"></p>
+
+          <div class="coupon" id="couponArea" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div class="small" id="couponLabel"></div>
+                <div style="font-weight:900;font-size:20px" id="finalDiscount"></div>
+              </div>
+              <div style="text-align:right">
+                <div class="small" id="couponTextLabel"></div>
+                <div style="font-weight:900;font-size:18px;color:#3b2a58" id="couponCode">-</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+              <button id="copyBtn" class="play-btn big-btn"></button>
+              <button id="saveScoreBtn" class="action-btn big-btn"></button>
+              <button id="retryBtn" class="action-btn big-btn"></button>
+            </div>
+          </div>
+
+          <p class="small" style="margin-top:12px" id="finalMsg"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: INFO -->
+    <aside class="info-card" id="infoCard">
+      <div>
+        <h3 id="goalsTitle"></h3>
+        <ul id="rewards"></ul>
+
+        <p class="small" id="tips"></p>
+
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          <button id="startBtnSide" class="play-btn big-btn"></button>
+          <button id="downloadBtn" class="action-btn big-btn"></button>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid #f0eef6">
+        <div class="small">
+          <strong id="controlsTitle"></strong>
+          <ul style="margin:8px 0 0 16px;padding:0">
+            <li id="controlsMouse"></li>
+            <li id="controlsKeyboard"></li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <h4 class="small" id="leaderboardTitle"></h4>
+        <ol id="leaderboard" style="padding-left:16px;margin:8px 0 0 8px"></ol>
+      </div>
+    </aside>
+
+    <footer id="footerText"></footer>
+
+  </div>
+</div>
+
+<script>
+// ---------- Utilities ----------
+const $ = sel => document.querySelector(sel);
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+// ---------- Elements ----------
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+const langSelect = $('#lang');
+const backgroundMusic = $('#backgroundMusic');
+
+// ---------- Game state ----------
+let state = {
+  score: 0,
+  lives: 20,
+  level: 1,
+  maxLevel: 4,
+  isRunning: false,
+  isPaused: false,
+  paddle: null,
+  ball: null,
+  bricks: [],
+  particles: []
+};
+let particles = state.particles;
+
+// ---------- Game sizing ----------
+function resizeCanvasToFit() {
+  const wrap = document.getElementById('canvasWrap');
+  const rect = wrap.getBoundingClientRect();
+  const desiredW = Math.max(600, Math.min(rect.width-16, window.innerWidth - 420));
+  const desiredH = Math.max(360, Math.min(rect.height-16, window.innerHeight - 260));
+  const ratio = window.devicePixelRatio || 1;
+  canvas.style.width = desiredW + 'px'; canvas.style.height = desiredH + 'px';
+  canvas.width = Math.floor(desiredW * ratio); canvas.height = Math.floor(desiredH * ratio);
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+}
+window.addEventListener('resize', resizeCanvasToFit);
+
+// ---------- Audio Management ----------
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() { if(!audioCtx) audioCtx = new AudioCtx(); }
+
+function sfxClick(f, dur=0.08, vol=0.18){
+  try{
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.value = vol; const now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(vol, now + 0.005);
+    o.start(now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.stop(now + dur + 0.01);
+  }catch(e){}
+}
+
+function startBackgroundMusic(){
+  backgroundMusic.currentTime = 0;
+  backgroundMusic.play().catch(e => console.log("L'utente deve interagire per avviare l'audio."));
+}
+function stopBackgroundMusic(){
+  backgroundMusic.pause();
+  backgroundMusic.currentTime = 0;
+}
+
+function spawnFireworks(count=18){
+  for(let i=0;i<count;i++){
+    const x = Math.random()*canvas.clientWidth;
+    const y = Math.random()*canvas.clientHeight*0.4;
+    particles.push({x,y,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.9)*5, life:60, color:`hsl(${Math.random()*360}deg,80%,60%)`});
+  }
+}
+
+function sfxPaddle(){ sfxClick(900, 0.06, 0.14); }
+function sfxBrick(){ sfxClick(640, 0.08, 0.12); }
+function sfxLose(){ sfxClick(160, 0.22, 0.16); }
+function sfxLevel(){ sfxClick(1200,0.18,0.14); }
+
+// ---------- Level Design ----------
+const levelLayouts = [
+  [ "       H       ", "      HHH      ", "     HHHHH     ", "    XXXXXXX    ", "   XXXXXXXXX   ", ],
+  [ "X H X X H X", " X H X H X ", "  X H H X  ", "   X H X   ", "    XXX    ", "     X     " ],
+  [ "XXXXXXXXXXXXX", "H H H H H H H", "XXXXXXXXXXXXX", "H H H H H H H", "XXXXXXXXXXXXX", ],
+  [ "H X H X H X H", " X H X H X H ", "H X H X H X H", " X H X H X H ", "H X H X H X H", ]
+];
+
+function initBricks(){
+  state.bricks = [];
+  const layout = levelLayouts[state.level - 1];
+  if (!layout) return;
+  const numRows = layout.length;
+  const numCols = layout[0].length;
+  const padding = 5;
+  const topOffset = 48;
+  const brickW = (canvas.clientWidth - (numCols + 1) * padding) / numCols;
+  const brickH = 24;
+  const palettes = [['#ffb3dd','#ffd98b'],['#b0ffd9','#9fd8ff'],['#caa0ff','#ffb3dd'],['#ffd98b','#b0ffd9']];
+  const pal = palettes[(state.level-1)%palettes.length];
+  for(let r=0; r<numRows; r++){
+    for(let c=0; c<numCols; c++){
+      const char = layout[r][c];
+      if (char !== ' ') {
+        const x = padding + c * (brickW + padding);
+        const y = topOffset + r * (brickH + padding);
+        const isHard = (char === 'H');
+        const hp = isHard ? 2 : 1;
+        const value = isHard ? 40 : 20;
+        const color = isHard ? pal[1] : pal[0];
+        state.bricks.push({x, y, w: brickW, h: brickH, hp, value, color});
+      }
+    }
+  }
+}
+
+// ---------- Paddle & Ball ----------
+function resetPaddleAndBall(){
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  state.paddle = {w:140, h:16, x:(W-140)/2, y:H-48, speed:20, color:'#0b69ff'};
+  state.ball = {r:9, x:W/2, y:H/2, vx: (Math.random()>0.5?1:-1)*3.4, vy:-3.4, color:'#2a7bff'};
+}
+
+// ---------- Discount & Coupon ----------
+function calcDiscount(reachedLevel){
+  if (reachedLevel <= 0) return 0;
+  return Math.min(5 * reachedLevel, 20);
+}
+function genCoupon(discount){
+  const rnd = Math.random().toString(36).substring(2,7).toUpperCase();
+  const d = new Date();
+  const date = `${d.getFullYear().toString().slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  return `DEMA-${discount}-${date}-${rnd}`;
+}
+
+// ---------- Leaderboard & Downloads ----------
+const LB_KEY = 'demark_leaderboard_v1';
+function loadLeaderboard(){ try{ return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch(e){ return []; } }
+function saveLeaderboardEntry(name, score){
+  const lb = loadLeaderboard();
+  lb.push({name,score,date:new Date().toISOString()});
+  lb.sort((a,b)=>b.score-a.score);
+  if(lb.length>10) lb.length = 10;
+  localStorage.setItem(LB_KEY, JSON.stringify(lb));
+  renderLeaderboard();
+}
+function renderLeaderboard(){
+  const lb = loadLeaderboard();
+  const t = translations[currentLang];
+  $('#leaderboard').innerHTML = lb.length ? lb.map(e=>`<li>${escapeHtml(e.name)} — ${e.score}</li>`).join('') : `<li class="small">${t.leaderboardEmpty}</li>`;
+}
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+const DL_KEY = 'demark_downloads_v1';
+function incDownloadCount(){
+  const cur = Number(localStorage.getItem(DL_KEY) || 0) + 1;
+  localStorage.setItem(DL_KEY, String(cur));
+  updateDownloadCount();
+}
+function updateDownloadCount(){
+  const cur = Number(localStorage.getItem(DL_KEY) || 0);
+  $('#downloadLabel').innerHTML = `${translations[currentLang].downloads} <span id="downloadCount">${cur}</span>`;
+}
+
+// ---------- Drawing ----------
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+  const g = ctx.createLinearGradient(0,0,0,canvas.clientHeight);
+  g.addColorStop(0,'#f8fbff'); g.addColorStop(1,'#dfeeff');
+  ctx.fillStyle = g; ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
+
+  for(const b of state.bricks){
+    if(b.hp<=0) continue;
+    roundRect(b.x,b.y,b.w,b.h,8);
+    const baseColor = b.color;
+    const bg = ctx.createLinearGradient(b.x,b.y,b.x+b.w,b.y+b.h);
+    bg.addColorStop(0, shadeColor(baseColor, 12));
+    bg.addColorStop(1, shadeColor(baseColor, -8));
+    ctx.fillStyle = bg;
+    ctx.globalAlpha = b.hp === 2 ? 1.0 : 0.8;
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  roundRect(state.paddle.x, state.paddle.y, state.paddle.w, state.paddle.h, 10);
+  const pg = ctx.createLinearGradient(state.paddle.x,state.paddle.y,state.paddle.x+state.paddle.w,state.paddle.y+state.paddle.h);
+  pg.addColorStop(0,'#ffffff'); pg.addColorStop(1,'rgba(10,90,255,0.15)');
+  ctx.fillStyle = pg; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+
+  ctx.beginPath();
+  const ballGrad = ctx.createRadialGradient(state.ball.x-3,state.ball.y-3,1,state.ball.x,state.ball.y,state.ball.r);
+  ballGrad.addColorStop(0,'#d7efff'); ballGrad.addColorStop(1,'#0757e6');
+  ctx.fillStyle = ballGrad;
+  ctx.shadowColor = '#2a7bff'; ctx.shadowBlur = 8;
+  ctx.arc(state.ball.x, state.ball.y, state.ball.r, 0, Math.PI*2);
+  ctx.fill(); ctx.shadowBlur = 0;
+  ctx.closePath();
+
+  for(const p of particles){
+    ctx.beginPath();
+    ctx.globalAlpha = p.life/60; ctx.fillStyle = p.color;
+    ctx.arc(p.x, p.y, Math.max(1, (p.life/60)*4), 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function shadeColor(col, percent) {
+  const num = parseInt(col.replace('#',''),16);
+  let r = (num >> 16) + percent; if(r>255) r=255; if(r<0) r=0;
+  let g = ((num >> 8) & 0x00FF) + percent; if(g>255) g=255; if(g<0) g=0;
+  let b = (num & 0x0000FF) + percent; if(b>255) b=255; if(b<0) b=0;
+  return '#' + (r.toString(16).padStart(2,'0')) + (g.toString(16).padStart(2,'0')) + (b.toString(16).padStart(2,'0'));
+}
+
+// ---------- Game Logic Update ----------
+function update(){
+  if(!state.isRunning) return; // Se il gioco non è in esecuzione, non fare nulla
+  if(state.isPaused) return;
+
+  state.ball.x += state.ball.vx; state.ball.y += state.ball.vy;
+
+  if(state.ball.x - state.ball.r < 0){ state.ball.x = state.ball.r; state.ball.vx *= -1; }
+  if(state.ball.x + state.ball.r > canvas.clientWidth){ state.ball.x = canvas.clientWidth - state.ball.r; state.ball.vx *= -1; }
+  if(state.ball.y - state.ball.r < 0){ state.ball.y = state.ball.r; state.ball.vy *= -1; }
+
+  if(state.ball.y + state.ball.r >= state.paddle.y && state.ball.y + state.ball.r <= state.paddle.y + state.paddle.h && state.ball.x >= state.paddle.x && state.ball.x <= state.paddle.x + state.paddle.w){
+    const relative = (state.ball.x - (state.paddle.x + state.paddle.w/2)) / (state.paddle.w/2);
+    const bounceAngle = relative * (Math.PI/3);
+    const speed = Math.sqrt(state.ball.vx*state.ball.vx + state.ball.vy*state.ball.vy);
+    state.ball.vx = speed * Math.sin(bounceAngle);
+    state.ball.vy = -Math.abs(speed * Math.cos(bounceAngle));
+    state.ball.y = state.paddle.y - state.ball.r - 2;
+    sfxPaddle();
+  }
+
+  if(state.ball.y - state.ball.r > canvas.clientHeight){
+    state.lives = Math.max(0, state.lives - 1);
+    updateAllTexts();
+    sfxLose();
+    if(state.lives <= 0){
+      gameOver();
+      return;
+    } else {
+      resetPaddleAndBall();
+    }
+  }
+
+  for(const b of state.bricks){
+    if(b.hp <= 0) continue;
+    const closestX = clamp(state.ball.x, b.x, b.x+b.w);
+    const closestY = clamp(state.ball.y, b.y, b.y+b.h);
+    const dx = state.ball.x - closestX; const dy = state.ball.y - closestY;
+    if((dx*dx + dy*dy) < (state.ball.r*state.ball.r + 0.01)){
+      b.hp -= 1;
+      if (b.hp <= 0) { state.score += b.value; updateAllTexts(); }
+      sfxBrick();
+      state.ball.vy *= -1;
+      break;
+    }
+  }
+
+  for(let i = particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+    p.life--;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  if(!state.bricks.some(b=>b.hp>0)){
+    state.isRunning = false;
+    sfxLevel();
+    spawnFireworks(28);
+    const discount = calcDiscount(state.level);
+    const t = translations[currentLang];
+    $('#levelMsg').textContent = t.levelComplete;
+    $('#levelSub').textContent = t.youGot.replace('{discount}', discount + '%');
+    $('#nextBtn').textContent = (state.level < state.maxLevel) ? t.nextBtn : t.finishBtn;
+    $('#levelOverlay').style.display = 'flex';
+    $('#nextBtn').focus();
+  }
+}
+
+// ---------- Controls ----------
+let keys = {left:false,right:false};
+window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowLeft') keys.left=true; if(e.key==='ArrowRight') keys.right=true; if(e.key===' ') togglePause(); });
+window.addEventListener('keyup', (e)=>{ if(e.key==='ArrowLeft') keys.left=false; if(e.key==='ArrowRight') keys.right=false; });
+canvas.addEventListener('mousemove', (e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left);
+  state.paddle.x = clamp(mx - state.paddle.w/2, 6, canvas.clientWidth - state.paddle.w - 6);
+});
+
+// ---------- Main Loop ----------
+function mainLoop(){
+  if(state.isRunning && !state.isPaused){
+    if(keys.left) state.paddle.x = clamp(state.paddle.x - state.paddle.speed, 6, canvas.clientWidth - state.paddle.w - 6);
+    if(keys.right) state.paddle.x = clamp(state.paddle.x + state.paddle.speed, 6, canvas.clientWidth - state.paddle.w - 6);
+  }
+  update();
+  draw();
+  requestAnimationFrame(mainLoop);
+}
+
+// ---------- Game Flow Management ----------
+function startGame(){
+  ensureAudio();
+  startBackgroundMusic();
+  state.isRunning = true;
+  state.isPaused = false;
+  state.score = 0;
+  state.lives = 20;
+  state.level = 1;
+  resetPaddleAndBall();
+  initBricks();
+  updateAllTexts();
+  $('#startOverlay').style.display = 'none';
+  $('#endOverlay').style.display = 'none';
+  $('#levelOverlay').style.display = 'none';
+}
+
+function nextLevel(){
+  state.level = Math.min(state.level+1, state.maxLevel);
+  initBricks();
+  resetPaddleAndBall();
+  state.isRunning = true;
+  state.isPaused = false;
+  $('#levelOverlay').style.display = 'none';
+  updateAllTexts();
+}
+
+function showEndScreen(title, message, showCoupon, discountValue){
+    state.isRunning = false; // <<< LA CORREZIONE CHIAVE
+    $('#endTitle').textContent = title;
+    $('#endMsg').textContent = message;
+    $('#couponArea').style.display = showCoupon ? 'block' : 'none';
+
+    if (showCoupon) {
+        const code = genCoupon(discountValue);
+        $('#finalDiscount').textContent = discountValue + '%';
+        $('#couponCode').textContent = code;
+    }
+    
+    $('#endOverlay').style.display = 'flex';
+    stopBackgroundMusic();
+}
+
+function gameOver() {
+    const t = translations[currentLang];
+    const completedLevels = state.level - 1;
+    const discount = Math.max(5, calcDiscount(completedLevels));
+    showEndScreen(t.gameOver, t.gameOverMsg, true, discount);
+}
+
+function finishGameReachedAll(){
+    const t = translations[currentLang];
+    const discount = calcDiscount(state.maxLevel);
+    spawnFireworks(28);
+    showEndScreen(t.endTitle, t.endMsg, true, discount);
+}
+
+function togglePause(){
+  if (!state.isRunning) return; // Non si può pausare se il gioco non è attivo
+  state.isPaused = !state.isPaused;
+  const t = translations[currentLang];
+  $('#pauseBtn').setAttribute('aria-pressed', String(state.isPaused));
+  $('#pauseBtn').textContent = state.isPaused ? t.resume : t.pause;
+  if (state.isPaused) { backgroundMusic.pause(); } 
+  else { backgroundMusic.play(); }
+}
+
+// ---------- Event Listeners ----------
+$('#startBtn').addEventListener('click', ()=>{ if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{}); startGame(); });
+$('#startBtnSide').addEventListener('click', ()=> $('#startBtn').click());
+$('#howBtn').addEventListener('click', ()=> alert(translations[currentLang].howToPlay));
+$('#nextBtn').addEventListener('click', ()=>{ if(state.level < state.maxLevel){ nextLevel(); } else { finishGameReachedAll(); } });
+$('#copyBtn').addEventListener('click', ()=>{
+  const txt = $('#couponCode').textContent; const t = translations[currentLang];
+  navigator.clipboard.writeText(txt).then(()=> {
+    $('#copyBtn').textContent = t.copied; setTimeout(()=>{ $('#copyBtn').textContent = t.copy; },1500);
+  }).catch(()=>{ alert(t.copyFail + ' ' + txt); });
+});
+$('#retryBtn').addEventListener('click', ()=>{ $('#endOverlay').style.display = 'none'; resetAll(); $('#startOverlay').style.display = 'flex'; stopBackgroundMusic(); });
+$('#saveScoreBtn').addEventListener('click', ()=>{
+  const t = translations[currentLang]; const name = prompt(t.enterName, t.playerName);
+  if(name) { saveLeaderboardEntry(name, state.score); alert(t.scoreSaved); }
+});
+$('#downloadBtn').addEventListener('click', ()=>{
+  const html = `<!doctype html>\n` + document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'demarkaInoid.html'; a.click(); URL.revokeObjectURL(url);
+  incDownloadCount();
+});
+$('#pauseBtn').addEventListener('click', togglePause);
+
+// ---------- Translations Object ----------
+const translations = {
+  it: {
+    subtitle: "Gioca. Rilassati. Ottieni il tuo sconto.",
+    score: "Punteggio:",
+    lives: "X:",
+    level: "Stage:",
+    language: "Lingua:",
+    downloads: "Download:",
+    pause: "Pausa",
+    resume: "Riprendi",
+    startTitle: "Prenditi 2 minuti",
+    startDesc: "Colpisci tutti i mattoncini per vincere uno sconto!",
+    startBtn: "Avvia DemarkAInoid",
+    howBtn: "Istruzioni",
+    audioNote: "Clicca su Start per abilitare l'audio.",
+    levelComplete: "STAGE COMPLETATO!",
+    youGot: "Sconto attuale: {discount}",
+    nextBtn: "Prossimo Stage",
+    finishBtn: "Ottieni Sconto Finale",
+    gameOver: "GAME OVER",
+    gameOverMsg: "Non mollare! Ecco uno sconto per gli stage completati. Puoi riprovare per ottenerne uno maggiore!",
+    endTitle: "VITTORIA!",
+    endMsg: "Hai completato tutti gli stage — Complimenti!",
+    yourDiscount: "Il tuo sconto",
+    couponCode: "Codice Sconto",
+    copy: "Copia codice",
+    copied: "Copiato!",
+    copyFail: "Copia fallita, per favore copia manualmente:",
+    saveScore: "Salva Punteggio",
+    retry: "Riprova",
+    finalMsg: "Grazie per aver giocato con noi! — DEMA SOLUTION",
+    goalsTitle: "Ricompense per Stage",
+    rewards: ["Stage 1 = <strong>5%</strong> di sconto", "Stage 2 = <strong>10%</strong> di sconto", "Stage 3 = <strong>15%</strong> di sconto", "Stage 4 = <strong>20%</strong> di sconto"],
+    tips: "Consiglio: i mattoncini più scuri richiedono due colpi!",
+    startBtnSide: "Avvia Gioco",
+    downloadBtn: "Scarica HTML",
+    controlsTitle: "Controlli:",
+    controlsMouse: "Mouse: sposta la barra",
+    controlsKeyboard: "Tastiera: freccia sinistra/destra",
+    leaderboardTitle: "Classifica",
+    leaderboardEmpty: "— nessun punteggio —",
+    playerName: "Giocatore",
+    enterName: "Inserisci il tuo nome per la classifica",
+    scoreSaved: "Punteggio salvato!",
+    howToPlay: "Usa il mouse o le frecce per muovere la barra. Distruggi tutti i mattoncini per superare lo stage. Hai 20 tentativi. Buona fortuna!",
+    footer: "Demo • ZIP pronto per GitHub Pages"
+  },
+  en: {
+    subtitle: "Play. Relax. Get your discount.",
+    score: 'Score:',
+    lives: 'X:',
+    level: 'Stage:',
+    language: 'Language:',
+    downloads: 'Downloads:',
+    pause: 'Pause',
+    resume: 'Resume',
+    startTitle: 'Take 2 minutes',
+    startDesc: 'Hit all the bricks to win a discount!',
+    startBtn: 'Start DemarkAInoid',
+    howBtn: 'Instructions',
+    audioNote: 'Click Start to enable audio.',
+    levelComplete: 'STAGE CLEAR!',
+    youGot: 'Current discount: {discount}',
+    nextBtn: 'Next Stage',
+    finishBtn: 'Get Final Discount',
+    gameOver: "GAME OVER",
+    gameOverMsg: "Don't give up! Here's a discount for the stages you've cleared. You can try again for a bigger one!",
+    endTitle: 'VICTORY!',
+    endMsg: 'You cleared all stages — Congratulations!',
+    yourDiscount: 'Your discount',
+    couponCode: 'Discount code',
+    copy: 'Copy code',
+    copied: 'Copied!',
+    copyFail: 'Copy failed, please copy manually:',
+    saveScore: 'Save Score',
+    retry: 'Retry',
+    finalMsg: 'Thanks for playing with us! — DEMA SOLUTION',
+    goalsTitle: 'Stage Rewards',
+    rewards: ['Stage 1 = <strong>5%</strong> discount', 'Stage 2 = <strong>10%</strong> discount', 'Stage 3 = <strong>15%</strong> discount', 'Stage 4 = <strong>20%</strong> discount'],
+    tips: 'Tip: darker bricks take two hits to break!',
+    startBtnSide: 'Start Game',
+    downloadBtn: 'Download HTML',
+    controlsTitle: 'Controls:',
+    controlsMouse: 'Mouse: move the paddle',
+    controlsKeyboard: 'Keyboard: left/right arrow',
+    leaderboardTitle: 'Leaderboard',
+    leaderboardEmpty: '— no scores yet —',
+    playerName: "Player",
+    enterName: 'Enter your name for the leaderboard',
+    scoreSaved: 'Score saved!',
+    howToPlay: 'Use the mouse or arrow keys to move the paddle. Destroy all bricks to clear the stage. You have 20 tries. Good luck!',
+    footer: 'Demo • ZIP-ready for GitHub Pages'
+  },
+   de: { 
+    subtitle: "Spielen. Entspannen. Hol dir deinen Rabatt.",
+    score: "Punkte:",
+    lives: "X:",
+    level: "Stage:",
+    language: "Sprache:",
+    downloads: "Downloads:",
+    pause: "Pause",
+    resume: "Fortsetzen",
+    startTitle: "Nimm dir 2 Minuten",
+    startDesc: "Triff alle Ziegel, um einen Rabatt zu gewinnen!",
+    startBtn: "Starte DemarkAInoid",
+    howBtn: "Anleitung",
+    audioNote: "Klicke auf Start, um Audio zu aktivieren.",
+    levelComplete: "STAGE GESCHAFFT!",
+    youGot: "Aktueller Rabatt: {discount}",
+    nextBtn: "Nächste Stage",
+    finishBtn: "Endgültigen Rabatt erhalten",
+    gameOver: "GAME OVER",
+    gameOverMsg: "Gib nicht auf! Hier ist ein Rabatt für die geschafften Stages. Du kannst es für einen größeren erneut versuchen!",
+    endTitle: "SIEG!",
+    endMsg: "Du hast alle Stages geschafft — Herzlichen Glückwunsch!",
+    yourDiscount: "Dein Rabatt",
+    couponCode: "Rabattcode",
+    copy: "Code kopieren",
+    copied: "Kopiert!",
+    copyFail: "Kopieren fehlgeschlagen, bitte manuell kopieren:",
+    saveScore: "Punktzahl speichern",
+    retry: "Erneut versuchen",
+    finalMsg: "Danke fürs Spielen! — DEMA SOLUTION",
+    goalsTitle: "Stage-Belohnungen",
+    rewards: ["Stage 1 = <strong>5%</strong> Rabatt", "Stage 2 = <strong>10%</strong> Rabatt", "Stage 3 = <strong>15%</strong> Rabatt", "Stage 4 = <strong>20%</strong> Rabatt"],
+    tips: "Tipp: Dunklere Ziegel benötigen zwei Treffer!",
+    startBtnSide: "Spiel starten",
+    downloadBtn: "HTML herunterladen",
+    controlsTitle: "Steuerung:",
+    controlsMouse: "Maus: Paddel bewegen",
+    controlsKeyboard: "Tastatur: Links-/Rechtspfeil",
+    leaderboardTitle: "Bestenliste",
+    leaderboardEmpty: "— noch keine Einträge —",
+    playerName: "Spieler",
+    enterName: "Geben Sie Ihren Namen für die Bestenliste ein",
+    scoreSaved: "Punktestand gespeichert!",
+    howToPlay: "Benutze die Maus oder die Pfeiltasten, um das Paddel zu bewegen. Zerstöre alle Ziegel, um die Stage zu schaffen. Du hast 20 Versuche. Viel Glück!",
+    footer: "Demo • ZIP-bereit für GitHub Pages"
+  },
+  fr: {
+    subtitle: "Jouez. Détendez-vous. Obtenez votre réduction.",
+    score: "Score:",
+    lives: "X:",
+    level: "Niveau:",
+    language: "Langue:",
+    downloads: "Téléchargements:",
+    pause: "Pause",
+    resume: "Reprendre",
+    startTitle: "Prenez 2 minutes",
+    startDesc: "Frappez toutes les briques pour gagner une réduction !",
+    startBtn: "Lancer DemarkAInoid",
+    howBtn: "Instructions",
+    audioNote: "Cliquez sur Démarrer pour activer l'audio.",
+    levelComplete: "NIVEAU TERMINÉ !",
+    youGot: "Réduction actuelle : {discount}",
+    nextBtn: "Niveau Suivant",
+    finishBtn: "Obtenir la Réduction Finale",
+    gameOver: "GAME OVER",
+    gameOverMsg: "N'abandonnez pas ! Voici une réduction pour les niveaux terminés. Vous pouvez réessayer pour en obtenir une plus grande !",
+    endTitle: "VICTOIRE !",
+    endMsg: "Vous avez terminé tous les niveaux — Félicitations !",
+    yourDiscount: "Votre réduction",
+    couponCode: "Code de réduction",
+    copy: "Copier le code",
+    copied: "Copié !",
+    copyFail: "La copie a échoué, veuillez copier manuellement :",
+    saveScore: "Sauvegarder le Score",
+    retry: "Réessayer",
+    finalMsg: "Merci d'avoir joué ! — DEMA SOLUTION",
+    goalsTitle: "Récompenses de Niveau",
+    rewards: ["Niveau 1 = <strong>5%</strong> de réduction", "Niveau 2 = <strong>10%</strong> de réduction", "Niveau 3 = <strong>15%</strong> de réduction", "Niveau 4 = <strong>20%</strong> de réduction"],
+    tips: "Conseil : les briques plus foncées nécessitent deux coups !",
+    startBtnSide: "Commencer le jeu",
+    downloadBtn: "Télécharger HTML",
+    controlsTitle: "Contrôles :",
+    controlsMouse: "Souris : déplacer la raquette",
+    controlsKeyboard: "Clavier : flèche gauche/droite",
+    leaderboardTitle: "Classement",
+    leaderboardEmpty: "— pas encore de scores —",
+    playerName: "Joueur",
+    enterName: "Entrez votre nom pour le classement",
+    scoreSaved: "Score enregistré !",
+    howToPlay: "Utilisez la souris ou les flèches pour déplacer la raquette. Détruisez toutes les briques pour terminer le niveau. Vous avez 20 essais. Bonne chance !",
+    footer: "Démo • Prêt en ZIP pour GitHub Pages"
+  },
+  nl: {
+    subtitle: "Speel. Ontspan. Krijg je korting.",
+    score: "Score:",
+    lives: "X:",
+    level: "Level:",
+    language: "Taal:",
+    downloads: "Downloads:",
+    pause: "Pauze",
+    resume: "Hervatten",
+    startTitle: "Neem 2 minuten",
+    startDesc: "Raak alle stenen om een korting te winnen!",
+    startBtn: "Start DemarkAInoid",
+    howBtn: "Instructies",
+    audioNote: "Klik op Start om audio in te schakelen.",
+    levelComplete: "LEVEL VOLTOOID!",
+    youGot: "Huidige korting: {discount}",
+    nextBtn: "Volgend Level",
+    finishBtn: "Krijg Definitieve Korting",
+    gameOver: "GAME OVER",
+    gameOverMsg: "Geef niet op! Hier is een korting voor de voltooide levels. Je kunt het opnieuw proberen voor een grotere!",
+    endTitle: "OVERWINNING!",
+    endMsg: "Je hebt alle levels voltooid — Gefeliciteerd!",
+    yourDiscount: "Jouw korting",
+    couponCode: "Kortingscode",
+    copy: "Kopieer code",
+    copied: "Gekopieerd!",
+    copyFail: "Kopiëren mislukt, kopieer handmatig:",
+    saveScore: "Score opslaan",
+    retry: "Opnieuw proberen",
+    finalMsg: "Bedankt voor het spelen! — DEMA SOLUTION",
+    goalsTitle: "Level Beloningen",
+    rewards: ["Level 1 = <strong>5%</strong> korting", "Level 2 = <strong>10%</strong> korting", "Level 3 = <strong>15%</strong> korting", "Level 4 = <strong>20%</strong> korting"],
+    tips: "Tip: donkere stenen hebben twee treffers nodig!",
+    startBtnSide: "Start Spel",
+    downloadBtn: "Download HTML",
+    controlsTitle: "Besturing:",
+    controlsMouse: "Muis: beweeg de paddle",
+    controlsKeyboard: "Toetsenbord: pijl links/rechts",
+    leaderboardTitle: "Klassement",
+    leaderboardEmpty: "— nog geen scores —",
+    playerName: "Speler",
+    enterName: "Voer je naam in voor het klassement",
+    scoreSaved: "Score opgeslagen!",
+    howToPlay: "Gebruik de muis of pijltjestoetsen om de paddle te bewegen. Vernietig alle stenen om het level te voltooien. Je hebt 20 pogingen. Veel succes!",
+    footer: "Demo • ZIP-klaar voor GitHub Pages"
+  }
+};
+
+let currentLang = 'en';
+
+function updateAllTexts(){
+  const t = translations[currentLang] || translations.en;
+  
+  $('#subtitleText').textContent = t.subtitle;
+  $('#scoreDisplay').innerHTML = `${t.score} <span id="score">${state.score}</span>`;
+  $('#livesDisplay').innerHTML = `${t.lives} <span id="lives">${state.lives}</span>`;
+  $('#levelDisplay').innerHTML = `${t.level} <span id="level">${state.level}</span>`;
+  $('#langLabel').textContent = t.language;
+  $('#pauseBtn').textContent = state.isPaused ? t.resume : t.pause;
+  
+  $('#startTitle').textContent = t.startTitle;
+  $('#startDesc').textContent = t.startDesc;
+  $('#startBtn').textContent = t.startBtn;
+  $('#howBtn').textContent = t.howBtn;
+  $('#audioNote').textContent = t.audioNote;
+  $('#endTitle').textContent = t.endTitle;
+  $('#endMsg').textContent = t.endMsg;
+  $('#couponLabel').textContent = t.yourDiscount;
+  $('#couponTextLabel').textContent = t.couponCode;
+  $('#copyBtn').textContent = t.copy;
+  $('#saveScoreBtn').textContent = t.saveScore;
+  $('#retryBtn').textContent = t.retry;
+  $('#finalMsg').textContent = t.finalMsg;
+
+  $('#goalsTitle').textContent = t.goalsTitle;
+  $('#rewards').innerHTML = t.rewards.map(item => `<li>${item}</li>`).join('');
+  $('#tips').textContent = t.tips;
+  $('#startBtnSide').textContent = t.startBtnSide;
+  $('#downloadBtn').textContent = t.downloadBtn;
+  $('#controlsTitle').textContent = t.controlsTitle;
+  $('#controlsMouse').textContent = t.controlsMouse;
+  $('#controlsKeyboard').textContent = t.controlsKeyboard;
+  $('#leaderboardTitle').textContent = t.leaderboardTitle;
+  $('#footerText').textContent = t.footer;
+
+  updateDownloadCount();
+  renderLeaderboard();
+}
+
+langSelect.addEventListener('change', (e)=>{
+  currentLang = e.target.value;
+  updateAllTexts();
+});
+
+// ---------- Initial Setup ----------
+function resetAll(){
+  resizeCanvasToFit();
+  state.score = 0; state.lives = 20; state.level = 1;
+  state.isRunning = false; state.isPaused = false;
+  initBricks();
+  resetPaddleAndBall();
+  langSelect.value = currentLang;
+  updateAllTexts();
+  $('#startOverlay').style.display = 'flex';
+  $('#levelOverlay').style.display = 'none';
+  $('#endOverlay').style.display = 'none';
+}
+
+// Start everything
+resetAll();
+requestAnimationFrame(mainLoop);
+
+console.log('DemarkAInoid loaded. Click Start to play.');
+</script>
+</body>
+</html>
